@@ -1,0 +1,17 @@
+﻿@page "/Zad3"
+@rendermode InteractiveServer
+
+<label>Ime: </label> <input @bind="ime" /> 
+<br />
+
+<label>Prezime: </label> <input @bind="prezime" />
+
+<p>Puno ime: @ime @prezime</p>
+
+@code
+{
+    string ime = "";
+    string prezime = "";
+}
+
+

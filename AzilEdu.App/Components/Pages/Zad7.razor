@@ -1,0 +1,14 @@
+﻿@page "/Zad7"
+@rendermode InteractiveServer
+
+<section class="kartica">
+    <h2>@naziv</h2>
+    <p>@opis</p>
+    <p>Status: @status</p>
+</section>
+
+@code{
+    string naziv = "Azil za životinje";
+    string opis = "Aplikacija za upravljanje podacima zivotinja.";
+    string status = "Active";
+}
