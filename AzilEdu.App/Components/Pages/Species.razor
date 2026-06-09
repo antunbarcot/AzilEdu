@@ -1,6 +1,135 @@
 ﻿@page "/species"
 
-<MudText Typo="Typo.h4">Species</MudText>
-<MudText Typo="Typo.body1">
-    Ovdje će se prikazivati vrste životinja.
+<MudText Typo="Typo.h4" GutterBottom="true">Vrste životinja</MudText>
+<MudText Typo="Typo.body1" Class="mb-4">
+    Pregled životinjskih vrsta koje azil trenutno sadržava.
 </MudText>
+<hr />
+
+<MudGrid Spacing="3">
+
+    <MudItem xs="12" md="3" Style="display:grid">
+        <MudPaper Class="pa-4" Elevation="2" Style="display:flex;flex-direction:column;align-items:flex-start;min-height:380px;">
+            <MudImage Src="images/bobtail.jpg"
+                      Alt="Pas"
+                      Width="350"
+                      Style="width:350px;height:250px;object-fit:cover;display:block;"
+                      Class="mb-3 rounded-3" />
+            <MudText Typo="Typo.h6">Psi</MudText>
+            <MudText Typo="Typo.body2">
+                <b>Latinski naziv:</b> Canis lupus familiaris
+            </MudText>
+            <MudText Typo="Typo.body2">
+                <b>Opis:</b>Druželjubivi kućni ljubimci koji traže vlasnika.
+            </MudText>
+            <MudText Typo="Typo.body2">
+                <b>Životni vijek:</b> 10-13 godina
+            </MudText>
+            <MudText Typo="Typo.body2">
+                <b>Tip prehrane:</b> mesožderi
+            </MudText>
+            <MudText Typo="Typo.body2">
+                <b>Broj jedinki:</b> 22
+            </MudText>
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Info"
+                       Size="Size.Small"
+                       Class="mt-auto"
+                       Style="align-self:flex-start;width:auto;">Detalji</MudButton>
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12" md="3" Style="display:grid">
+        <MudPaper Class="pa-4" Elevation="2" Style="display:flex;flex-direction:column;align-items:flex-start;min-height:380px;">
+            <MudImage Src="images/cat.jpg"
+                      Alt="Mačka"
+                      Width="350"
+                      Style="width:350px;height:250px;object-fit:cover;display:block;"
+                      Class="mb-3 rounded-3" />
+            <MudText Typo="Typo.h6">Mačke</MudText>
+            <MudText Typo="Typo.body2">
+                <b>Latinski naziv:</b> felis catus
+            </MudText>
+            <MudText Typo="Typo.body2">
+                <b>Opis:</b>Mačke su umiljate životinje.
+            </MudText>
+            <MudText Typo="Typo.body2">
+                <b>Životni vijek:</b> 12-18 godina
+            </MudText>
+            <MudText Typo="Typo.body2">
+                <b>Tip prehrane:</b> mesožderi
+            </MudText>
+            <MudText Typo="Typo.body2">
+                <b>Broj jedinki:</b> 14
+            </MudText>
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Info"
+                       Size="Size.Small"
+                       Class="mt-auto"
+                       Style="align-self:flex-start;width:auto;">Detalji</MudButton>
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12" md="3" Style="display:grid">
+        <MudPaper Class="pa-4" Elevation="2" Style="display:flex;flex-direction:column;align-items:flex-start;min-height:380px;">
+            <MudImage Src="images/rabbit.jpg"
+                      Alt="Zečevi"
+                      Width="350"
+                      Style="width:350px;height:250px;object-fit:cover;display:block;"
+                      Class="mb-3 rounded-3" />
+            <MudText Typo="Typo.h6">Zečevi</MudText>
+            <MudText Typo="Typo.body2">
+                <b>Latinski naziv:</b> Oryctolagus cuniculus
+            </MudText>
+            <MudText Typo="Typo.body2">
+                <b>Opis:</b> Mali biljojedi koji su vrlo osjetljivi i zahtijevaju pažljivu njegu.
+            </MudText>
+            <MudText Typo="Typo.body2">
+                <b>Životni vijek:</b> 8-12 godina
+            </MudText>
+            <MudText Typo="Typo.body2">
+                <b>Tip prehrane:</b> biljožderi
+            </MudText>
+            <MudText Typo="Typo.body2">
+                <b>Broj jedinki:</b> 6
+            </MudText>
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Info"
+                       Size="Size.Small"
+                       Class="mt-auto"
+                       Style="align-self:flex-start;width:auto;">Detalji</MudButton>
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12" md="3" Style="display:grid">
+        <MudPaper Class="pa-4" Elevation="2" Style="display:flex;flex-direction:column;align-items:flex-start;min-height:380px;">
+            <MudImage Src="images/bird.jpg"
+                      Alt="Ptice"
+                      Width="350"
+                      Style="width:350px;height:250px;object-fit:cover;display:block;"
+                      Class="mb-3 rounded-3" />
+            <MudText Typo="Typo.h6">Ptice</MudText>
+            <MudText Typo="Typo.body2">
+                <b>Latinski naziv:</b> Aves
+            </MudText>
+            <MudText Typo="Typo.body2">
+                <b>Opis:</b> Različite vrste ptica koje se nalaze u azilu, od manjih do većih vrsta.
+            </MudText>
+            <MudText Typo="Typo.body2">
+                <b>Životni vijek:</b> 5-20 godina
+            </MudText>
+            <MudText Typo="Typo.body2">
+                <b>Tip prehrane:</b> svežderi
+            </MudText>
+            <MudText Typo="Typo.body2">
+                <b>Broj jedinki:</b> 9
+            </MudText>
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Info"
+                       Size="Size.Small"
+                       Class="mt-auto"
+                       Style="align-self:flex-start;width:auto;">Detalji</MudButton>
+        </MudPaper>
+    </MudItem>
+
+</MudGrid>

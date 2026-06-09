@@ -1,5 +1,5 @@
 ﻿<MudNavMenu>
-    <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">
+    <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home"> @*NavLinkMatch.All link je aktivan samo kada je URL /*@
         Home
     </MudNavLink>
 
@@ -11,6 +11,10 @@
         Species
     </MudNavLink>
 
+    <MudNavLink Href="/breeds" Icon="@Icons.Material.Filled.Tag">
+        Breeds
+    </MudNavLink>
+
     <MudNavLink Href="/adopters" Icon="@Icons.Material.Filled.People">
         Adopters
     </MudNavLink>
@@ -18,4 +22,5 @@
     <MudNavLink Href="/adoptions" Icon="@Icons.Material.Filled.Favorite">
         Adoptions
     </MudNavLink>
+ 
 </MudNavMenu>
