@@ -1,10 +1,18 @@
 ﻿@page "/housing-units/create"
 @rendermode InteractiveServer
+@layout InteractiveLayout
 @using AzilEdu.Shared.DTOs
 @using System.Net.Http.Json
 @inject HttpClient Http
 @inject NavigationManager Navigation
 
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+@*nadodane su ove tri linije, i @layout InteractiveLayout i sada radi komunikacija s bazom
+    ovo služi kao zamjena za <Routes @rendermode="InteractiveServer" /> u App.razor, jer
+    s time nije radila navigacija.
+*@
 <MudText Typo="Typo.h4" GutterBottom="true">Nova smještajna jedinica</MudText>
 <MudText Typo="Typo.body1" Class="mb-4">
     Na ovoj stranici unosimo novu smještajnu jedinicu i podatke šaljemo prema API-ju preko POST zahtjeva.

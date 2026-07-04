@@ -1,9 +1,16 @@
 ﻿@page "/animals/create"
 @rendermode InteractiveServer
+@layout InteractiveLayout 
+@*nadodano*@
 @using AzilEdu.Shared.DTOs
 @using System.Net.Http.Json
 @inject HttpClient Http
 @inject NavigationManager Navigation
+
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+@*nadodano*@
 
 <MudText Typo="Typo.h4" GutterBottom="true">Nova životinja</MudText>
 <MudText Typo="Typo.body1" Class="mb-4">

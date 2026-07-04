@@ -23,6 +23,7 @@ public class AnimalsController : ControllerBase
         var animals = await _context.Animals
             .OrderBy(a => a.Name)
             .Select(a => new AnimalDto
+            /*animal se pretvara u animaldto*/
             {
                 Id = a.Id,
                 Name = a.Name,
@@ -67,7 +68,7 @@ public class AnimalsController : ControllerBase
 
     [HttpPost]
     public async Task<ActionResult<AnimalDto>> CreateAnimal(SaveAnimalDto dto)
-    {
+    {/*moramo pretvoriti dto u obični model jer se on ne može spremiti u bazu*/
         var animal = new Animal
         {
             Name = dto.Name,
