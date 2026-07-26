@@ -45,7 +45,20 @@ public class EmployeesController : ControllerBase
 
         return Ok(employees);
     }
+    [HttpGet("lookup")]
+    public async Task<ActionResult<List<LookupDto>>> GetEmployeesLookup()
+    {
+        var result = await _context.Employees
+            .OrderBy(employee => employee.LastName)
+            .Select(employee => new LookupDto
+            {
+                Id = employee.Id,
+                Name = employee.FirstName + " " + employee.LastName
+            })
+            .ToListAsync();
 
+        return Ok(result);
+    }
     [HttpGet("{id}")]
     public async Task<ActionResult<EmployeeDto>> GetEmployeeById(int id)
     {

@@ -47,6 +47,22 @@ public class DonorsController : ControllerBase
 
         return Ok(donors);
     }
+    [HttpGet("lookup")]
+    public async Task<ActionResult<List<LookupDto>>> GetDonorsLookup()
+    {
+        var result = await _context.Donors
+            .OrderBy(donor => donor.LastName)
+            .Select(donor => new LookupDto
+            {
+                Id = donor.Id,
+                Name = !string.IsNullOrWhiteSpace(donor.OrganizationName)
+                    ? donor.OrganizationName
+                    : donor.FirstName + " " + donor.LastName
+            })
+            .ToListAsync();
+
+        return Ok(result);
+    }
 
     [HttpGet("{id}")]
     public async Task<ActionResult<DonorDto>> GetDonorById(int id)

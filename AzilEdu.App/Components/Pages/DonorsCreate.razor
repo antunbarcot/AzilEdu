@@ -1,0 +1,150 @@
+﻿@page "/donors/create"
+@rendermode InteractiveServer
+
+@using AzilEdu.Shared.DTOs
+@using System.Net.Http.Json
+@using MudBlazor
+
+@inject HttpClient Http
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+
+<MudText Typo="Typo.h4" Class="mb-4">Novi donator</MudText>
+
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">
+        @errorMessage
+    </MudAlert>
+}
+
+@if (isLoading)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else
+{
+    <EditForm Model="model" OnValidSubmit="SaveDonor" FormName="donor-create">
+        <DataAnnotationsValidator />
+
+        <MudPaper Class="pa-4">
+            <ValidationSummary />
+
+            <MudTextField Label="Ime"
+                          @bind-Value="model.FirstName"
+                          Class="mb-3" />
+
+            <MudTextField Label="Prezime"
+                          @bind-Value="model.LastName"
+                          Class="mb-3" />
+
+            <MudTextField Label="Naziv organizacije"
+                          @bind-Value="model.OrganizationName"
+                          Class="mb-3" />
+
+            <MudTextField Label="Email"
+                          @bind-Value="model.Email"
+                          Class="mb-3" />
+
+            <MudTextField Label="Telefon"
+                          @bind-Value="model.Phone"
+                          Class="mb-3" />
+
+            <MudTextField Label="Adresa"
+                          @bind-Value="model.Address"
+                          Class="mb-3" />
+
+            <MudTextField Label="Grad"
+                          @bind-Value="model.City"
+                          Class="mb-3" />
+
+            <MudSelect T="int" Label="Tip donatora"
+                       @bind-Value="model.DonorTypeId"
+                       Required="true"
+                       Class="mb-3">
+                @foreach (var type in typeList)
+                {
+                    <MudSelectItem T="int" Value="@type.Id">@type.Name</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudSelect T="int" Label="Status donatora"
+                       @bind-Value="model.DonorStatusId"
+                       Required="true"
+                       Class="mb-3">
+                @foreach (var status in statusList)
+                {
+                    <MudSelectItem T="int" Value="@status.Id">@status.Name</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudTextField Label="Napomena"
+                          @bind-Value="model.Notes"
+                          Lines="3"
+                          Class="mb-4" />
+
+            <MudButton ButtonType="ButtonType.Submit"
+                       Variant="Variant.Filled"
+                       Color="Color.Primary">
+                Spremi
+            </MudButton>
+
+            <MudButton Href="/donors"
+                       Variant="Variant.Text"
+                       Class="ml-2">
+                Odustani
+            </MudButton>
+        </MudPaper>
+    </EditForm>
+}
+
+@code {
+    private SaveDonorDto model = new()
+    {
+        CreatedAt = DateTime.Now
+    };
+
+    private List<LookupDto> typeList = new();
+    private List<LookupDto> statusList = new();
+
+    private bool isLoading = true;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            typeList = await Http.GetFromJsonAsync<List<LookupDto>>("api/donortypes") ?? new();
+            statusList = await Http.GetFromJsonAsync<List<LookupDto>>("api/donorstatuses") ?? new();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Greška kod učitavanja forme: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task SaveDonor()
+    {
+        if (string.IsNullOrWhiteSpace(model.FirstName) &&
+            string.IsNullOrWhiteSpace(model.OrganizationName))
+        {
+            errorMessage = "Unesi ime i prezime ili naziv organizacije.";
+            return;
+        }
+
+        var response = await Http.PostAsJsonAsync("api/donors", model);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            errorMessage = "Donator nije spremljen.";
+            return;
+        }
+
+        Snackbar.Add("Donator je uspješno spremljen.", Severity.Success);
+        Navigation.NavigateTo("/donors");
+    }
+}

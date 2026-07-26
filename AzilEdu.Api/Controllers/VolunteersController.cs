@@ -43,7 +43,20 @@ public class VolunteersController : ControllerBase
 
         return Ok(volunteers);
     }
+    [HttpGet("lookup")]
+    public async Task<ActionResult<List<LookupDto>>> GetVolunteersLookup()
+    {
+        var result = await _context.Volunteers
+            .OrderBy(volunteer => volunteer.LastName)
+            .Select(volunteer => new LookupDto
+            {
+                Id = volunteer.Id,
+                Name = volunteer.FirstName + " " + volunteer.LastName
+            })
+            .ToListAsync();
 
+        return Ok(result);
+    }
     [HttpGet("{id}")]
     public async Task<ActionResult<VolunteerDto>> GetVolunteerById(int id)
     {

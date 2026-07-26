@@ -41,7 +41,20 @@ public class AnimalsController : ControllerBase
 
         return Ok(animals);
     }
+    [HttpGet("lookup")]
+    public async Task<ActionResult<List<LookupDto>>> GetAnimalsLookup()
+    {
+        var result = await _context.Animals
+            .OrderBy(animal => animal.Name)
+            .Select(animal => new LookupDto
+            {
+                Id = animal.Id,
+                Name = animal.Name
+            })
+            .ToListAsync();
 
+        return Ok(result);
+    }
     [HttpGet("{id}")]
     public async Task<ActionResult<AnimalDto>> GetAnimalById(int id)
     {

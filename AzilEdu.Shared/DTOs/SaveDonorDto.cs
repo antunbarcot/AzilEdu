@@ -1,4 +1,6 @@
-﻿namespace AzilEdu.Shared.DTOs;
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace AzilEdu.Shared.DTOs;
 public class SaveDonorDto
 {
     public string FirstName { get; set; } = string.Empty;
@@ -10,6 +12,9 @@ public class SaveDonorDto
     public string City { get; set; } = string.Empty;
     public string Notes { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
+    [Range(1, int.MaxValue, ErrorMessage = "Tip donatora je obavezan.")]
     public int DonorTypeId { get; set; }
+
+    [Range(1, int.MaxValue, ErrorMessage = "Status donatora je obavezan.")]
     public int DonorStatusId { get; set; }
 }

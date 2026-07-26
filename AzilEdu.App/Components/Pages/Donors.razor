@@ -6,12 +6,27 @@
 
 <MudText Typo="Typo.h4" GutterBottom="true">Donatori</MudText>
 
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">
+        @errorMessage
+    </MudAlert>
+}
+
+<MudButton Href="/donors/create"
+           Variant="Variant.Filled"
+           Color="Color.Primary"
+           StartIcon="@Icons.Material.Filled.Add"
+           Class="mb-4">
+    Novi donator
+</MudButton>
+
 <MudPaper Class="pa-4 mb-4">
     <MudGrid>
         <MudItem xs="12" md="4">
             <MudTextField @bind-Value="searchString"
                           Label="Pretraži donatore"
-                          Placeholder="Ime, prezime ili naziv organizacije"
+                          Placeholder="Ime, prezime, organizacija ili email"
                           Variant="Variant.Outlined"
                           Immediate="true"
                           Adornment="Adornment.Start"
@@ -55,35 +70,50 @@
     </MudGrid>
 </MudPaper>
 
-<MudTable Items="@donors" Filter="FilterDonors" Hover="true" Striped="true" Bordered="true" Dense="true">
-    <HeaderContent>
-        <MudTh><MudTableSortLabel SortBy="new Func<DonorDto, object>(x => x.LastName)">Donator</MudTableSortLabel></MudTh>
-        <MudTh>Tip</MudTh>
-        <MudTh>Status</MudTh>
-        <MudTh>Email</MudTh>
-        <MudTh>Telefon</MudTh>
-        <MudTh>Grad</MudTh>
-    </HeaderContent>
+@if (isLoading)
+{
+    <div class="d-flex justify-center my-6">
+        <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
+    </div>
+}
+else
+{
+    <MudTable Items="@donors" Filter="FilterDonors" Hover="true" Striped="true" Bordered="true" Dense="true">
+        <HeaderContent>
+            <MudTh><MudTableSortLabel SortBy="new Func<DonorDto, object>(x => x.LastName)">Donator</MudTableSortLabel></MudTh>
+            <MudTh>Tip</MudTh>
+            <MudTh>Status</MudTh>
+            <MudTh>Email</MudTh>
+            <MudTh>Telefon</MudTh>
+            <MudTh>Grad</MudTh>
+            <MudTh>Akcije</MudTh>
+        </HeaderContent>
 
-    <RowTemplate>
-        <MudTd DataLabel="Donator">
-            @(string.IsNullOrWhiteSpace(context.OrganizationName)
-                ? $"{context.FirstName} {context.LastName}"
-                : context.OrganizationName)
-        </MudTd>
-        <MudTd DataLabel="Tip">@context.Type</MudTd>
-        <MudTd DataLabel="Status">@context.Status</MudTd>
-        <MudTd DataLabel="Email">@context.Email</MudTd>
-        <MudTd DataLabel="Telefon">@context.Phone</MudTd>
-        <MudTd DataLabel="Grad">@context.City</MudTd>
-    </RowTemplate>
+        <RowTemplate>
+            <MudTd DataLabel="Donator">
+                @(string.IsNullOrWhiteSpace(context.OrganizationName)
+                    ? $"{context.FirstName} {context.LastName}"
+                    : context.OrganizationName)
+            </MudTd>
+            <MudTd DataLabel="Tip">@context.Type</MudTd>
+            <MudTd DataLabel="Status">@context.Status</MudTd>
+            <MudTd DataLabel="Email">@context.Email</MudTd>
+            <MudTd DataLabel="Telefon">@context.Phone</MudTd>
+            <MudTd DataLabel="Grad">@context.City</MudTd>
+            <MudTd DataLabel="Akcije">
+                <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                               Color="Color.Primary"
+                               Href="@($"/donors/edit/{context.Id}")" />
+            </MudTd>
+        </RowTemplate>
 
-    <NoRecordsContent>
-        <MudText Typo="Typo.body1" Class="pa-4">
-            Nema rezultata za zadane kriterije pretrage i filtera.
-        </MudText>
-    </NoRecordsContent>
-</MudTable>
+        <NoRecordsContent>
+            <MudText Typo="Typo.body1" Class="pa-4">
+                Nema rezultata za zadane kriterije pretrage i filtera.
+            </MudText>
+        </NoRecordsContent>
+    </MudTable>
+}
 
 @code {
     private List<DonorDto> donors = new();
@@ -93,11 +123,25 @@
     private List<LookupDto> statusList = new();
     private string? selectedStatus;
 
+    private bool isLoading = true;
+    private string? errorMessage;
+
     protected override async Task OnInitializedAsync()
     {
-        donors = await Http.GetFromJsonAsync<List<DonorDto>>("api/donors") ?? new();
-        typeList = await Http.GetFromJsonAsync<List<LookupDto>>("api/donortypes") ?? new();
-        statusList = await Http.GetFromJsonAsync<List<LookupDto>>("api/donorstatuses") ?? new();
+        try
+        {
+            donors = await Http.GetFromJsonAsync<List<DonorDto>>("api/donors") ?? new();
+            typeList = await Http.GetFromJsonAsync<List<LookupDto>>("api/donortypes") ?? new();
+            statusList = await Http.GetFromJsonAsync<List<LookupDto>>("api/donorstatuses") ?? new();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Greška kod učitavanja donatora: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     private bool FilterDonors(DonorDto donor)
@@ -109,7 +153,8 @@
             var matchesSearch =
                 (!string.IsNullOrWhiteSpace(donor.FirstName) && donor.FirstName.ToLower().Contains(term)) ||
                 (!string.IsNullOrWhiteSpace(donor.LastName) && donor.LastName.ToLower().Contains(term)) ||
-                (!string.IsNullOrWhiteSpace(donor.OrganizationName) && donor.OrganizationName.ToLower().Contains(term));
+                (!string.IsNullOrWhiteSpace(donor.OrganizationName) && donor.OrganizationName.ToLower().Contains(term)) ||
+                (!string.IsNullOrWhiteSpace(donor.Email) && donor.Email.ToLower().Contains(term));
 
             if (!matchesSearch)
                 return false;

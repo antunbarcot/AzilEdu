@@ -21,6 +21,12 @@ public class AzilEduDbContext : DbContext
     public DbSet<Employee> Employees => Set<Employee>();
     public DbSet<EmployeePosition> EmployeePositions => Set<EmployeePosition>();
     public DbSet<EmployeeStatus> EmployeeStatuses => Set<EmployeeStatus>();
+    public DbSet<VolunteerTask> VolunteerTasks => Set<VolunteerTask>();
+    public DbSet<VolunteerTaskStatus> VolunteerTaskStatuses => Set<VolunteerTaskStatus>();
+    public DbSet<VolunteerTaskType> VolunteerTaskTypes => Set<VolunteerTaskType>();
+    public DbSet<Donation> Donations => Set<Donation>();
+    public DbSet<DonationType> DonationTypes => Set<DonationType>();
+    public DbSet<DonationStatus> DonationStatuses => Set<DonationStatus>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -100,5 +106,76 @@ public class AzilEduDbContext : DbContext
             new EmployeeStatus { Id = 3, Name = "Neaktivan" }
         );
 
+        modelBuilder.Entity<VolunteerTaskStatus>().HasData(
+        new VolunteerTaskStatus { Id = 1, Name = "Otvoren" },
+        new VolunteerTaskStatus { Id = 2, Name = "Dodijeljen" },
+        new VolunteerTaskStatus { Id = 3, Name = "U tijeku" },
+        new VolunteerTaskStatus { Id = 4, Name = "Završeno" },
+        new VolunteerTaskStatus { Id = 5, Name = "Otkazano" }
+        );
+
+        modelBuilder.Entity<VolunteerTaskType>().HasData(
+            new VolunteerTaskType { Id = 1, Name = "Šetnja" },
+            new VolunteerTaskType { Id = 2, Name = "Hranjenje" },
+            new VolunteerTaskType { Id = 3, Name = "Čišćenje" },
+            new VolunteerTaskType { Id = 4, Name = "Socijalizacija" },
+            new VolunteerTaskType { Id = 5, Name = "Prijevoz" },
+            new VolunteerTaskType { Id = 6, Name = "Administracija" }
+        );
+        modelBuilder.Entity<DonationType>().HasData(
+            new DonationType { Id = 1, Name = "Novčana" },
+            new DonationType { Id = 2, Name = "Hrana" },
+            new DonationType { Id = 3, Name = "Oprema" },
+            new DonationType { Id = 4, Name = "Lijekovi" },
+            new DonationType { Id = 5, Name = "Usluga" }
+        );
+
+        modelBuilder.Entity<DonationStatus>().HasData(
+            new DonationStatus { Id = 1, Name = "Evidentirana" },
+            new DonationStatus { Id = 2, Name = "Potvrđena" },
+            new DonationStatus { Id = 3, Name = "Iskorištena" },
+            new DonationStatus { Id = 4, Name = "Otkazana" }
+        );
+        modelBuilder.Entity<VolunteerTask>()
+        .HasOne(task => task.Volunteer)
+        .WithMany()
+        .HasForeignKey(task => task.VolunteerId)
+        .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<VolunteerTask>()
+            .HasOne(task => task.Animal)
+            .WithMany()
+            .HasForeignKey(task => task.AnimalId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<VolunteerTask>()
+            .HasOne(task => task.VolunteerTaskStatus)
+            .WithMany(status => status.Tasks)
+            .HasForeignKey(task => task.VolunteerTaskStatusId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<VolunteerTask>()
+            .HasOne(task => task.VolunteerTaskType)
+            .WithMany(type => type.Tasks)
+            .HasForeignKey(task => task.VolunteerTaskTypeId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Donation>()
+        .HasOne(donation => donation.Donor)
+        .WithMany()
+        .HasForeignKey(donation => donation.DonorId)
+        .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Donation>()
+            .HasOne(donation => donation.DonationType)
+            .WithMany(type => type.Donations)
+            .HasForeignKey(donation => donation.DonationTypeId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Donation>()
+            .HasOne(donation => donation.DonationStatus)
+            .WithMany(status => status.Donations)
+            .HasForeignKey(donation => donation.DonationStatusId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }
