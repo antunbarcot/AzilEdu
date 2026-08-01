@@ -27,6 +27,10 @@ public class AzilEduDbContext : DbContext
     public DbSet<Donation> Donations => Set<Donation>();
     public DbSet<DonationType> DonationTypes => Set<DonationType>();
     public DbSet<DonationStatus> DonationStatuses => Set<DonationStatus>();
+    public DbSet<AnimalMedia> AnimalMedia => Set<AnimalMedia>();
+    public DbSet<AppUser> AppUsers => Set<AppUser>();
+    public DbSet<AppRole> AppRoles => Set<AppRole>();
+    public DbSet<AppUserRole> AppUserRoles => Set<AppUserRole>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -136,6 +140,13 @@ public class AzilEduDbContext : DbContext
             new DonationStatus { Id = 3, Name = "Iskorištena" },
             new DonationStatus { Id = 4, Name = "Otkazana" }
         );
+        modelBuilder.Entity<AppRole>().HasData(
+            new AppRole { Id = 1, Name = "User", DisplayName = "Korisnik" },
+            new AppRole { Id = 2, Name = "Admin", DisplayName = "Administrator" },
+            new AppRole { Id = 3, Name = "Employee", DisplayName = "Djelatnik" },
+            new AppRole { Id = 4, Name = "Volunteer", DisplayName = "Volonter" },
+            new AppRole { Id = 5, Name = "Donor", DisplayName = "Donator" }
+        );
         modelBuilder.Entity<VolunteerTask>()
         .HasOne(task => task.Volunteer)
         .WithMany()
@@ -161,10 +172,10 @@ public class AzilEduDbContext : DbContext
             .OnDelete(DeleteBehavior.Restrict);
 
         modelBuilder.Entity<Donation>()
-        .HasOne(donation => donation.Donor)
-        .WithMany()
-        .HasForeignKey(donation => donation.DonorId)
-        .OnDelete(DeleteBehavior.Restrict);
+            .HasOne(donation => donation.Donor)
+            .WithMany(donor => donor.Donations)
+            .HasForeignKey(donation => donation.DonorId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         modelBuilder.Entity<Donation>()
             .HasOne(donation => donation.DonationType)
@@ -177,5 +188,45 @@ public class AzilEduDbContext : DbContext
             .WithMany(status => status.Donations)
             .HasForeignKey(donation => donation.DonationStatusId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<AnimalMedia>()
+            .HasOne(media => media.Animal)
+            .WithMany(animal => animal.Media)
+            .HasForeignKey(media => media.AnimalId)
+            .OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<AppUser>()
+    .HasIndex(user => user.Email)
+    .IsUnique();
+
+        modelBuilder.Entity<AppUserRole>()
+            .HasKey(userRole => new { userRole.AppUserId, userRole.AppRoleId });
+
+        modelBuilder.Entity<AppUserRole>()
+            .HasOne(userRole => userRole.AppUser)
+            .WithMany(user => user.UserRoles)
+            .HasForeignKey(userRole => userRole.AppUserId);
+
+        modelBuilder.Entity<AppUserRole>()
+            .HasOne(userRole => userRole.AppRole)
+            .WithMany(role => role.UserRoles)
+            .HasForeignKey(userRole => userRole.AppRoleId);
+
+        modelBuilder.Entity<AppUser>()
+            .HasOne(user => user.Donor)
+            .WithMany()
+            .HasForeignKey(user => user.DonorId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<AppUser>()
+            .HasOne(user => user.Volunteer)
+            .WithMany()
+            .HasForeignKey(user => user.VolunteerId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<AppUser>()
+            .HasOne(user => user.Employee)
+            .WithMany()
+            .HasForeignKey(user => user.EmployeeId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }

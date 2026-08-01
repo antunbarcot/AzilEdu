@@ -10,14 +10,13 @@ namespace AzilEdu.Api.Controllers;
 [Route("api/[controller]")]
 public class DonationsController : ControllerBase
 {
-    // DonorId će kasnije biti povezan s prijavljenim korisnikom preko AppUserId.
     private readonly AzilEduDbContext _context;
 
     public DonationsController(AzilEduDbContext context)
     {
         _context = context;
     }
-    
+
     [HttpGet]
     public async Task<ActionResult<List<DonationDto>>> GetDonations(
         [FromQuery] int? donorId,
@@ -31,39 +30,28 @@ public class DonationsController : ControllerBase
             .Include(donation => donation.DonationType)
             .Include(donation => donation.DonationStatus)
             .AsQueryable();
-        // Kasnije će donator vidjeti samo svoje donacije.
+
         if (donorId.HasValue)
-        {
             query = query.Where(donation => donation.DonorId == donorId.Value);
-        }
-        // ... ostatak filtera nepromijenjen
+
         if (typeId.HasValue)
-        {
             query = query.Where(donation => donation.DonationTypeId == typeId.Value);
-        }
 
         if (statusId.HasValue)
-        {
             query = query.Where(donation => donation.DonationStatusId == statusId.Value);
-        }
 
         if (dateFrom.HasValue)
-        {
-            query = query.Where(donation => donation.DonationDate >= dateFrom.Value);
-        }
+            query = query.Where(donation => donation.DonationDate.Date >= dateFrom.Value.Date);
 
         if (dateTo.HasValue)
-        {
-            query = query.Where(donation => donation.DonationDate <= dateTo.Value);
-        }
+            query = query.Where(donation => donation.DonationDate.Date <= dateTo.Value.Date);
 
         var donations = await query
             .OrderByDescending(donation => donation.DonationDate)
+            .ThenByDescending(donation => donation.Id)
             .ToListAsync();
 
-        var result = donations.Select(ToDto).ToList();
-
-        return Ok(result);
+        return Ok(donations.Select(ToDto).ToList());
     }
 
     [HttpGet("{id}")]
@@ -76,9 +64,7 @@ public class DonationsController : ControllerBase
             .FirstOrDefaultAsync(item => item.Id == id);
 
         if (donation is null)
-        {
             return NotFound();
-        }
 
         return Ok(ToDto(donation));
     }
@@ -86,11 +72,10 @@ public class DonationsController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<DonationDto>> CreateDonation(SaveDonationDto request)
     {
-        var validationError = await ValidateBusinessRules(request);
+        var validationError = ValidateDonation(request);
+
         if (validationError is not null)
-        {
             return BadRequest(validationError);
-        }
 
         var donation = new Donation
         {
@@ -108,33 +93,23 @@ public class DonationsController : ControllerBase
         _context.Donations.Add(donation);
         await _context.SaveChangesAsync();
 
-        var createdDonation = await _context.Donations
-            .Include(item => item.Donor)
-            .Include(item => item.DonationType)
-            .Include(item => item.DonationStatus)
-            .FirstAsync(item => item.Id == donation.Id);
+        await LoadReferences(donation);
 
-        return CreatedAtAction(
-            nameof(GetDonationById),
-            new { id = donation.Id },
-            ToDto(createdDonation));
+        return CreatedAtAction(nameof(GetDonationById), new { id = donation.Id }, ToDto(donation));
     }
 
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateDonation(int id, SaveDonationDto request)
     {
-        var validationError = await ValidateBusinessRules(request);
+        var validationError = ValidateDonation(request);
+
         if (validationError is not null)
-        {
             return BadRequest(validationError);
-        }
 
         var donation = await _context.Donations.FindAsync(id);
 
         if (donation is null)
-        {
             return NotFound();
-        }
 
         donation.DonorId = request.DonorId;
         donation.DonationTypeId = request.DonationTypeId;
@@ -157,9 +132,7 @@ public class DonationsController : ControllerBase
         var donation = await _context.Donations.FindAsync(id);
 
         if (donation is null)
-        {
             return NotFound();
-        }
 
         _context.Donations.Remove(donation);
         await _context.SaveChangesAsync();
@@ -167,56 +140,69 @@ public class DonationsController : ControllerBase
         return NoContent();
     }
 
-    private async Task<string?> ValidateBusinessRules(SaveDonationDto request)
+    private async Task LoadReferences(Donation donation)
     {
-        var donor = await _context.Donors.FindAsync(request.DonorId);
-        if (donor is null)
+        await _context.Entry(donation).Reference(item => item.Donor).LoadAsync();
+        await _context.Entry(donation).Reference(item => item.DonationType).LoadAsync();
+        await _context.Entry(donation).Reference(item => item.DonationStatus).LoadAsync();
+    }
+
+    private static string? ValidateDonation(SaveDonationDto request)
+    {
+        if (request.DonorId <= 0)
+            return "Donator je obavezan.";
+
+        if (request.DonationTypeId <= 0)
+            return "Tip donacije je obavezan.";
+
+        if (request.DonationStatusId <= 0)
+            return "Status donacije je obavezan.";
+
+        if (request.DonationDate.Date > DateTime.Today)
+            return "Datum donacije ne smije biti u budućnosti.";
+
+        var isMoneyDonation = request.DonationTypeId == 1;
+
+        if (isMoneyDonation)
         {
-            return "Donator je obavezan i mora biti valjan.";
+            if (!request.Amount.HasValue || request.Amount.Value <= 0)
+                return "Za novčanu donaciju potrebno je upisati iznos veći od nule.";
+        }
+        else
+        {
+            if (string.IsNullOrWhiteSpace(request.ItemName))
+                return "Za materijalnu donaciju potrebno je upisati naziv donacije.";
+
+            if (!request.Quantity.HasValue || request.Quantity.Value <= 0)
+                return "Za materijalnu donaciju potrebno je upisati količinu veću od nule.";
         }
 
-        var type = await _context.DonationTypes.FindAsync(request.DonationTypeId);
-        if (type is null)
-        {
-            return "Tip donacije je obavezan i mora biti valjan.";
-        }
+        if (request.Quantity.HasValue && request.Quantity.Value < 0)
+            return "Količina ne smije biti negativna.";
 
-        var status = await _context.DonationStatuses.FindAsync(request.DonationStatusId);
-        if (status is null)
-        {
-            return "Status donacije je obavezan i mora biti valjan.";
-        }
-
-        var isMonetary = type.Name == "Novčana";
-
-        if (isMonetary && !request.Amount.HasValue)
-        {
-            return "Za novčanu donaciju iznos je obavezan.";
-        }
-
-        if (!isMonetary && string.IsNullOrWhiteSpace(request.ItemName))
-        {
-            return "Za materijalnu donaciju naziv stvari je obavezan.";
-        }
+        if (request.EstimatedValue.HasValue && request.EstimatedValue.Value < 0)
+            return "Procijenjena vrijednost ne smije biti negativna.";
 
         return null;
     }
 
     private static DonationDto ToDto(Donation donation)
     {
+        var donorName = donation.Donor is null
+            ? string.Empty
+            : !string.IsNullOrWhiteSpace(donation.Donor.OrganizationName)
+                ? donation.Donor.OrganizationName
+                : $"{donation.Donor.FirstName} {donation.Donor.LastName}".Trim();
+
         return new DonationDto
         {
             Id = donation.Id,
             DonorId = donation.DonorId,
-            DonorName = donation.Donor != null
-                ? (!string.IsNullOrWhiteSpace(donation.Donor.OrganizationName)
-                    ? donation.Donor.OrganizationName
-                    : donation.Donor.FirstName + " " + donation.Donor.LastName)
-                : string.Empty,
+            DonorName = donorName,
             DonationTypeId = donation.DonationTypeId,
-            Type = donation.DonationType != null ? donation.DonationType.Name : string.Empty,
+            DonationType = donation.DonationType?.Name ?? string.Empty,
             DonationStatusId = donation.DonationStatusId,
-            Status = donation.DonationStatus != null ? donation.DonationStatus.Name : string.Empty,
+            DonationStatus = donation.DonationStatus?.Name ?? string.Empty,
             DonationDate = donation.DonationDate,
             Amount = donation.Amount,
             ItemName = donation.ItemName,

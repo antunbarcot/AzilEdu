@@ -19,6 +19,7 @@ using (var scope = app.Services.CreateScope())
 
     await db.Database.MigrateAsync();
 
+    // 1. Seeding za životinje
     if (!await db.Animals.AnyAsync())
     {
         db.Animals.AddRange(
@@ -98,6 +99,9 @@ using (var scope = app.Services.CreateScope())
 
         await db.SaveChangesAsync();
     }
+
+    // 2. Seeding za korisnike (sada ide neovisno o životinjama)
+    await AppUserSeeder.SeedAsync(db);
 }
 
 if (app.Environment.IsDevelopment())
@@ -106,6 +110,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseStaticFiles();
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();

@@ -22,4 +22,8 @@
     <ProjectReference Include="..\AzilEdu.Shared\AzilEdu.Shared.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="wwwroot\uploads\animals\" />
+  </ItemGroup>
+
 </Project>

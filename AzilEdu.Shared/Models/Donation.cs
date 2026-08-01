@@ -13,7 +13,7 @@ public class Donation
     public int DonationStatusId { get; set; }
     public DonationStatus? DonationStatus { get; set; }
 
-    public DateTime DonationDate { get; set; }
+    public DateTime DonationDate { get; set; } = DateTime.Today;
     public decimal? Amount { get; set; }
     public string ItemName { get; set; } = string.Empty;
     public decimal? Quantity { get; set; }

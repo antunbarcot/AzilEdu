@@ -15,4 +15,5 @@ public class DonorDto
     public string Type { get; set; } = string.Empty;
     public int DonorStatusId { get; set; }
     public string Status { get; set; } = string.Empty;
+    public string DisplayName { get; set; } = string.Empty;
 }

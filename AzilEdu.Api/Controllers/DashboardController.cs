@@ -15,6 +15,7 @@ public class DashboardController : ControllerBase
     {
         _context = context;
     }
+
     // Kasnije će admin vidjeti sve podatke, a ostale role samo svoj dio aplikacije.
     [HttpGet("summary")]
     public async Task<ActionResult<DashboardSummaryDto>> GetSummary()
@@ -33,35 +34,21 @@ public class DashboardController : ControllerBase
             DonationsCount = await _context.Donations.CountAsync(),
 
             PendingDonationsCount = await _context.Donations
-                .Include(donation => donation.DonationStatus)
-                .CountAsync(donation => donation.DonationStatus != null
-                    && donation.DonationStatus.Name == "Evidentirana"),
+                .CountAsync(donation => donation.DonationStatusId == 1),
 
             MoneyDonationsTotal = await _context.Donations
-                .Include(donation => donation.DonationType)
-                .Include(donation => donation.DonationStatus)
-                .Where(donation => donation.DonationType != null
-                    && donation.DonationType.Name == "Novčana"
-                    && donation.DonationStatus != null
-                    && donation.DonationStatus.Name != "Otkazana")
-                .SumAsync(donation => donation.Amount ?? 0),
+                .Where(donation => donation.DonationTypeId == 1 && donation.Amount.HasValue)
+                .SumAsync(donation => donation.Amount!.Value),
 
             EstimatedMaterialDonationsTotal = await _context.Donations
-                .Include(donation => donation.DonationType)
-                .Include(donation => donation.DonationStatus)
-                .Where(donation => donation.DonationType != null
-                    && donation.DonationType.Name != "Novčana"
-                    && donation.DonationStatus != null
-                    && donation.DonationStatus.Name != "Otkazana")
-                .SumAsync(donation => donation.EstimatedValue ?? 0),
+                .Where(donation => donation.DonationTypeId != 1 && donation.EstimatedValue.HasValue)
+                .SumAsync(donation => donation.EstimatedValue!.Value),
 
             OverdueVolunteerTasksCount = await _context.VolunteerTasks
-                .Include(task => task.VolunteerTaskStatus)
                 .CountAsync(task => task.DueDate.HasValue
                     && task.DueDate.Value.Date < today
-                    && task.VolunteerTaskStatus != null
-                    && task.VolunteerTaskStatus.Name != "Završeno"
-                    && task.VolunteerTaskStatus.Name != "Otkazano")
+                    && task.VolunteerTaskStatusId != 4
+                    && task.VolunteerTaskStatusId != 5)
         };
 
         return Ok(summary);
@@ -74,23 +61,31 @@ public class DashboardController : ControllerBase
             .Include(donation => donation.Donor)
             .Include(donation => donation.DonationType)
             .OrderByDescending(donation => donation.DonationDate)
+            .ThenByDescending(donation => donation.Id)
             .Take(5)
             .ToListAsync();
 
-        var result = donations.Select(donation => new RecentDonationDto
+        var result = donations.Select(donation =>
         {
-            Id = donation.Id,
-            DonorName = donation.Donor != null
-        ? (!string.IsNullOrWhiteSpace(donation.Donor.OrganizationName)
-            ? donation.Donor.OrganizationName
-            : donation.Donor.FirstName + " " + donation.Donor.LastName)
-        : string.Empty,
-            DonationType = donation.DonationType != null ? donation.DonationType.Name : string.Empty,
-            DonationDate = donation.DonationDate,
-            Amount = donation.Amount,
-            ItemName = donation.ItemName,
-            Quantity = donation.Quantity,
-            EstimatedValue = donation.EstimatedValue
+            string donorName;
+            if (donation.Donor is null)
+                donorName = string.Empty;
+            else if (!string.IsNullOrWhiteSpace(donation.Donor.OrganizationName))
+                donorName = donation.Donor.OrganizationName;
+            else
+                donorName = $"{donation.Donor.FirstName} {donation.Donor.LastName}".Trim();
+
+            return new RecentDonationDto
+            {
+                Id = donation.Id,
+                DonorName = donorName,
+                DonationType = donation.DonationType?.Name ?? string.Empty,
+                DonationDate = donation.DonationDate,
+                Amount = donation.Amount,
+                ItemName = donation.ItemName,
+                Quantity = donation.Quantity,
+                EstimatedValue = donation.EstimatedValue
+            };
         }).ToList();
 
         return Ok(result);

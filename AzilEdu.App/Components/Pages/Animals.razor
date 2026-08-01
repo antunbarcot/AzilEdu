@@ -5,6 +5,7 @@
 @inject HttpClient Http
 
 <MudText Typo="Typo.h4" GutterBottom="true">Životinje</MudText>
+
 <MudText Typo="Typo.body1" Class="mb-4">
     Na ovoj stranici prikazujemo životinje koje dolaze iz baze preko API-ja i DTO objekata.
 </MudText>
@@ -98,6 +99,10 @@
             </MudChip>
         </MudTd>
         <MudTd DataLabel="Akcije">
+            <MudIconButton Icon="@Icons.Material.Filled.AccountCircle"
+                           Color="Color.Primary"
+                           Href="@($"/animals/{context.Id}")"
+                           title="Otvori profil" />
             <MudButton Variant="Variant.Text" Color="Color.Primary" Href="@($"/animals/edit/{context.Id}")">
                 Uredi
             </MudButton>
@@ -134,9 +139,9 @@
             var term = searchString.Trim().ToLower();
 
             var matchesSearch =
-                            (!string.IsNullOrWhiteSpace(animal.Name) && animal.Name.ToLower().Contains(term)) ||
-                            (!string.IsNullOrWhiteSpace(animal.Breed) && animal.Breed.ToLower().Contains(term)) ||
-                            (!string.IsNullOrWhiteSpace(animal.Description) && animal.Description.ToLower().Contains(term));
+                (!string.IsNullOrWhiteSpace(animal.Name) && animal.Name.ToLower().Contains(term)) ||
+                (!string.IsNullOrWhiteSpace(animal.Breed) && animal.Breed.ToLower().Contains(term)) ||
+                (!string.IsNullOrWhiteSpace(animal.Description) && animal.Description.ToLower().Contains(term));
 
             if (!matchesSearch)
                 return false;
@@ -161,7 +166,7 @@
         }
 
         if (!string.IsNullOrWhiteSpace(selectedStatus) &&
-                    !string.Equals(animal.Status, selectedStatus, StringComparison.OrdinalIgnoreCase))
+            !string.Equals(animal.Status, selectedStatus, StringComparison.OrdinalIgnoreCase))
         {
             return false;
         }
