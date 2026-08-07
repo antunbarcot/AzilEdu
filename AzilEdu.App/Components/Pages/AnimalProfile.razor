@@ -1,6 +1,7 @@
 ﻿@page "/animals/{Id:int}"
 @using AzilEdu.Shared.DTOs
 @using Microsoft.AspNetCore.Components.Forms
+@using System.Net.Http.Json
 @inject HttpClient Http
 @using AzilEdu.App.Services
 @inject CurrentUserService CurrentUser
@@ -43,7 +44,9 @@ else
         @if (CanManageMedia)
         {
             <MudPaper Class="pa-5">
-                <MudText Typo="Typo.h5" Class="mb-3">Dodaj sliku ili video</MudText>
+                <MudText Typo="Typo.h5" Class="mb-3">
+                    Dodaj sliku ili video
+                </MudText>
 
                 <InputFile OnChange="HandleFileSelected"
                            accept="image/jpeg,image/png,image/webp,video/mp4,video/webm" />
@@ -85,6 +88,7 @@ else
                 {
                     <MudItem xs="12" sm="6" md="4">
                         <MudCard>
+
                             @if (media.MediaType == "Image")
                             {
                                 <img src="@media.Url"
@@ -95,16 +99,21 @@ else
                             {
                                 <video controls preload="metadata"
                                        style="width:100%;height:240px;background:#111;display:block;">
-                                    <source src="@media.Url" type="@media.ContentType" />
+                                    <source src="@media.Url"
+                                            type="@media.ContentType" />
                                 </video>
                             }
 
                             <MudCardContent>
-                                <MudText>@(media.Caption ?? media.OriginalFileName)</MudText>
+                                <MudText>
+                                    @(media.Caption ?? media.OriginalFileName)
+                                </MudText>
 
                                 @if (media.IsCover)
                                 {
-                                    <MudChip T="string" Color="Color.Primary" Size="Size.Small">
+                                    <MudChip T="string"
+                                             Color="Color.Primary"
+                                             Size="Size.Small">
                                         Naslovna slika
                                     </MudChip>
                                 }
@@ -113,6 +122,7 @@ else
                             @if (CanManageMedia)
                             {
                                 <MudCardActions>
+
                                     @if (media.MediaType == "Image" && !media.IsCover)
                                     {
                                         <MudButton OnClick="@(() => SetCover(media.Id))">
@@ -124,36 +134,71 @@ else
                                                OnClick="@(() => DeleteMedia(media.Id))">
                                         Izbriši
                                     </MudButton>
+
                                 </MudCardActions>
                             }
+
                         </MudCard>
                     </MudItem>
                 }
             </MudGrid>
         }
+
+        @if (CanManageMedia)
+        {
+            <MudPaper Class="pa-5" Elevation="1">
+                <MudText Typo="Typo.h5" Class="mb-2">
+                    AI objava za društvene mreže
+                </MudText>
+
+                <MudButton OnClick="GenerateSocialPost"
+                           Variant="Variant.Outlined"
+                           Color="Color.Secondary"
+                           Disabled="isGeneratingSocialPost">
+                    @(isGeneratingSocialPost ? "Generiram..." : "Predloži objavu")
+                </MudButton>
+
+                @if (!string.IsNullOrWhiteSpace(socialPost))
+                {
+                    <MudTextField @bind-Value="socialPost"
+                                  Label="Uredivi prijedlog objave"
+                                  Lines="5"
+                                  Variant="Variant.Outlined"
+                                  Class="mt-3" />
+                }
+            </MudPaper>
+        }
+
     </MudStack>
 }
-
 @code {
     private const long MaxFileSize = 25 * 1024 * 1024;
+
     private bool CanManageMedia =>
-    CurrentUser.HasAnyRole("Admin", "Employee");
+        CurrentUser.HasAnyRole("Admin", "Employee");
+
     [Parameter]
     public int Id { get; set; }
 
     private AnimalDto? animal;
     private List<AnimalMediaDto> mediaItems = new();
     private IBrowserFile? selectedFile;
+
     private string? caption;
     private string? errorMessage;
+
     private bool isLoading = true;
     private bool isUploading;
 
+    // AI objava
+    private bool isGeneratingSocialPost;
+    private string? socialPost;
+
     private string ProfileImageUrl =>
-            mediaItems.FirstOrDefault(item =>
-                item.IsCover && item.MediaType == "Image")?.Url
-            ?? animal?.ImageUrl
-            ?? "/images/animals/placeholder.svg";
+        mediaItems.FirstOrDefault(item =>
+            item.IsCover && item.MediaType == "Image")?.Url
+        ?? animal?.ImageUrl
+        ?? "/images/animals/placeholder.svg";
 
     protected override async Task OnParametersSetAsync()
     {
@@ -207,12 +252,15 @@ else
             using var fileContent = new StreamContent(stream);
 
             fileContent.Headers.ContentType =
-                            new System.Net.Http.Headers.MediaTypeHeaderValue(selectedFile.ContentType);
+                new System.Net.Http.Headers.MediaTypeHeaderValue(
+                    selectedFile.ContentType);
 
             form.Add(fileContent, "file", selectedFile.Name);
             form.Add(new StringContent(caption ?? string.Empty), "caption");
 
-            var response = await Http.PostAsync($"api/animals/{Id}/media", form);
+            var response = await Http.PostAsync(
+                $"api/animals/{Id}/media",
+                form);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -222,6 +270,7 @@ else
 
             selectedFile = null;
             caption = null;
+
             await LoadMedia();
         }
         catch (Exception ex)
@@ -251,6 +300,52 @@ else
 
         if (response.IsSuccessStatusCode)
             await LoadMedia();
+    }
+
+    private async Task GenerateSocialPost()
+    {
+        if (animal is null)
+            return;
+
+        isGeneratingSocialPost = true;
+        errorMessage = null;
+
+        try
+        {
+            var response = await Http.PostAsJsonAsync(
+                "api/ai/text",
+                new AiTextRequestDto
+                {
+                    Purpose = "social-post",
+                    Input =
+                        $"Ime: {animal.Name}; " +
+                        $"Vrsta: {animal.Species}; " +
+                        $"Pasmina: {animal.Breed}; " +
+                        $"Status: {animal.Status}; " +
+                        $"Opis: {animal.Description}."
+                });
+
+            if (!response.IsSuccessStatusCode)
+            {
+                errorMessage =
+                    await response.Content.ReadAsStringAsync();
+                return;
+            }
+
+            var result =
+                await response.Content.ReadFromJsonAsync<AiTextResponseDto>();
+
+            socialPost = result?.Text;
+        }
+        catch (Exception ex)
+        {
+            errorMessage =
+                $"Objavu nije moguće generirati: {ex.Message}";
+        }
+        finally
+        {
+            isGeneratingSocialPost = false;
+        }
     }
 
     private static string FormatBytes(long bytes)

@@ -126,6 +126,33 @@ else if (donationFound)
                 </MudItem>
             </MudGrid>
 
+            <MudPaper Class="pa-4 mt-4" Outlined="true">
+                <MudText Typo="Typo.h6" Class="mb-2">AI zahvala donatoru</MudText>
+                <MudStack Row="true" AlignItems="AlignItems.End" Spacing="2">
+                    <MudSelect T="string" Label="Ton poruke" @bind-Value="selectedTone" Variant="Variant.Outlined">
+                        <MudSelectItem Value='@("Topao")'>Topao</MudSelectItem>
+                        <MudSelectItem Value='@("Formalan")'>Formalan</MudSelectItem>
+                        <MudSelectItem Value='@("Kratak")'>Kratak</MudSelectItem>
+                    </MudSelect>
+                    <MudButton ButtonType="ButtonType.Button"
+                               OnClick="GenerateThankYou"
+                               Variant="Variant.Outlined"
+                               Color="Color.Secondary"
+                               Disabled="isGeneratingThankYou">
+                        @(isGeneratingThankYou ? "Generiram..." : "Generiraj zahvalu")
+                    </MudButton>
+                </MudStack>
+
+                @if (!string.IsNullOrWhiteSpace(thankYouText))
+                {
+                    <MudTextField @bind-Value="thankYouText"
+                                  Label="Uredivi prijedlog poruke"
+                                  Lines="4"
+                                  Variant="Variant.Outlined"
+                                  Class="mt-3" />
+                }
+            </MudPaper>
+
             <MudStack Row="true" Spacing="2" Class="mt-4">
                 <MudButton ButtonType="ButtonType.Submit"
                            Variant="Variant.Filled"
@@ -159,6 +186,10 @@ else if (donationFound)
     private bool donationFound;
     private string? errorMessage;
 
+    private string selectedTone = "Topao";
+    private string? thankYouText;
+    private bool isGeneratingThankYou;
+
     private bool IsMoneyDonation => model.DonationTypeId == 1;
 
     private int SelectedDonationTypeId
@@ -191,15 +222,11 @@ else if (donationFound)
 
         try
         {
-            donors = await Http.GetFromJsonAsync<List<LookupDto>>(
-                "api/donors/lookup") ?? new();
-            types = await Http.GetFromJsonAsync<List<LookupDto>>(
-                "api/donationtypes") ?? new();
-            statuses = await Http.GetFromJsonAsync<List<LookupDto>>(
-                "api/donationstatuses") ?? new();
+            donors = await Http.GetFromJsonAsync<List<LookupDto>>("api/donors/lookup") ?? new();
+            types = await Http.GetFromJsonAsync<List<LookupDto>>("api/donationtypes") ?? new();
+            statuses = await Http.GetFromJsonAsync<List<LookupDto>>("api/donationstatuses") ?? new();
 
-            var donation = await Http.GetFromJsonAsync<DonationDto>(
-                            $"api/donations/{Id}");
+            var donation = await Http.GetFromJsonAsync<DonationDto>($"api/donations/{Id}");
 
             if (donation is null)
             {
@@ -248,9 +275,7 @@ else if (donationFound)
         {
             model.DonationDate = donationDate!.Value;
 
-            var response = await Http.PutAsJsonAsync(
-                            $"api/donations/{Id}",
-                            model);
+            var response = await Http.PutAsJsonAsync($"api/donations/{Id}", model);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -308,5 +333,57 @@ else if (donationFound)
             return "Procijenjena vrijednost ne smije biti negativna.";
 
         return null;
+    }
+
+    private async Task GenerateThankYou()
+    {
+        isGeneratingThankYou = true;
+        errorMessage = null;
+
+        try
+        {
+            var donorName = donors
+                .FirstOrDefault(item => item.Id == model.DonorId)?.Name
+                ?? "Donator";
+
+            var donationType = types
+                .FirstOrDefault(item => item.Id == model.DonationTypeId)?.Name
+                ?? "Donacija";
+
+            var donationValue = model.Amount.HasValue
+                ? $"{model.Amount.Value:N2} €"
+                : string.IsNullOrWhiteSpace(model.ItemName)
+                    ? "nije navedena"
+                    : model.ItemName;
+
+            var formattedDate = donationDate.HasValue
+                ? donationDate.Value.ToString("dd.MM.yyyy.")
+                : "nepoznat datum";
+
+            var response = await Http.PostAsJsonAsync("api/ai/text", new AiTextRequestDto
+            {
+                Purpose = "donor-thank-you",
+                Input = $"Ton: {selectedTone}; Donator: {donorName}; " +
+                        $"Tip donacije: {donationType}; Vrijednost ili sadržaj: {donationValue}; " +
+                        $"Datum: {formattedDate}."
+            });
+
+            if (!response.IsSuccessStatusCode)
+            {
+                errorMessage = await response.Content.ReadAsStringAsync();
+                return;
+            }
+
+            var result = await response.Content.ReadFromJsonAsync<AiTextResponseDto>();
+            thankYouText = result?.Text;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Zahvalu nije moguće generirati: {ex.Message}";
+        }
+        finally
+        {
+            isGeneratingThankYou = false;
+        }
     }
 }

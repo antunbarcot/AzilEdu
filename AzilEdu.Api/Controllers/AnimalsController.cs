@@ -50,9 +50,9 @@ public class AnimalsController : ControllerBase
         foreach (var animal in animals)
             animal.ImageUrl = ToPublicImageUrl(animal.ImageUrl);
 
-        return Ok(animals); 
+        return Ok(animals);
     }
-        private static string GetCoverImagePath(Animal animal)
+    private static string GetCoverImagePath(Animal animal)
     {
         var cover = animal.Media
             .Where(media =>
@@ -73,7 +73,7 @@ public class AnimalsController : ControllerBase
 
         return $"{Request.Scheme}://{Request.Host}{imageUrl}";
     }
-    
+
     [HttpGet("lookup")]
     public async Task<ActionResult<List<LookupDto>>> GetAnimalsLookup()
     {
@@ -117,6 +117,8 @@ public class AnimalsController : ControllerBase
         });
     }
 
+    [Microsoft.AspNetCore.Authorization.Authorize(
+        Policy = AzilEdu.Api.Security.AuthorizationPolicies.Staff)]
     [HttpPost]
     public async Task<ActionResult<AnimalDto>> CreateAnimal(SaveAnimalDto dto)
     {
@@ -161,6 +163,8 @@ public class AnimalsController : ControllerBase
         return CreatedAtAction(nameof(GetAnimalById), new { id = animal.Id }, result);
     }
 
+    [Microsoft.AspNetCore.Authorization.Authorize(
+        Policy = AzilEdu.Api.Security.AuthorizationPolicies.Staff)]
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateAnimal(int id, SaveAnimalDto dto)
     {
@@ -183,6 +187,8 @@ public class AnimalsController : ControllerBase
         return NoContent();
     }
 
+    [Microsoft.AspNetCore.Authorization.Authorize(
+        Policy = AzilEdu.Api.Security.AuthorizationPolicies.Staff)]
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteAnimal(int id)
     {

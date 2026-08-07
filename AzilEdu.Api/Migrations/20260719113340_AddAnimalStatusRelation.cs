@@ -10,6 +10,7 @@ namespace AzilEdu.Api.Migrations
     public partial class AddAnimalStatusRelation : Migration
     {
         /// <inheritdoc />
+        
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.RenameColumn(

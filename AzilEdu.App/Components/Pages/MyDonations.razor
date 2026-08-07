@@ -118,7 +118,7 @@ else
             }
 
             donations = await Http.GetFromJsonAsync<List<DonationDto>>(
-                $"api/donations?donorId={donorId}") ?? new();
+                "api/donations/mine") ?? new();
         }
         catch (HttpRequestException ex)
         {
